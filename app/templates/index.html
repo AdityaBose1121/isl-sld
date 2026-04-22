@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Real-time Indian Sign Language detection with facial sentiment analysis powered by deep learning">
+    <title>ISL SignVision — Indian Sign Language Detection</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Ambient background -->
+    <div class="ambient-bg">
+        <div class="ambient-orb orb-1"></div>
+        <div class="ambient-orb orb-2"></div>
+        <div class="ambient-orb orb-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo">
+                    <span class="logo-icon">🤟</span>
+                    <h1>ISL <span class="gradient-text">SignVision</span></h1>
+                </div>
+                <span class="version-badge">v1.0</span>
+            </div>
+            <div class="header-right">
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Offline</span>
+                </div>
+                <button class="btn btn-icon" id="settingsBtn" title="Settings">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel: Video Feed -->
+            <section class="video-section">
+                <div class="video-container" id="videoContainer">
+                    <!-- Webcam video (hidden, used for capture) -->
+                    <video id="webcamVideo" autoplay playsinline muted></video>
+                    <!-- Canvas for processed frames -->
+                    <canvas id="outputCanvas"></canvas>
+                    <!-- Overlay when not running -->
+                    <div class="video-overlay" id="videoOverlay">
+                        <div class="overlay-content">
+                            <div class="camera-icon">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                            </div>
+                            <p>Click <strong>Start Detection</strong> to begin</p>
+                            <p class="overlay-hint">Allow camera access when prompted</p>
+                        </div>
+                    </div>
+                    <!-- Hand detection indicators -->
+                    <div class="hand-indicators">
+                        <div class="hand-indicator" id="leftHandIndicator">
+                            <span class="hand-label">L</span>
+                            <span class="hand-dot"></span>
+                        </div>
+                        <div class="hand-indicator" id="rightHandIndicator">
+                            <span class="hand-label">R</span>
+                            <span class="hand-dot"></span>
+                        </div>
+                    </div>
+                    <!-- FPS counter -->
+                    <div class="fps-counter" id="fpsCounter">0 FPS</div>
+                </div>
+
+                <!-- Controls -->
+                <div class="controls-bar">
+                    <button class="btn btn-primary btn-lg" id="startBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Start Detection
+                    </button>
+                    <button class="btn btn-secondary" id="resetBtn" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+                        Reset
+                    </button>
+                    <div class="controls-spacer"></div>
+                    <select class="camera-select" id="cameraSelect">
+                        <option value="0">Default Camera</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Right Panel: Results -->
+            <aside class="results-panel">
+                <!-- Current Sign -->
+                <div class="result-card card-sign">
+                    <div class="card-header">
+                        <span class="card-icon">✋</span>
+                        <h3>Current Sign</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="sign-display" id="signDisplay">
+                            <span class="sign-placeholder">Waiting...</span>
+                        </div>
+                        <div class="gloss-buffer" id="glossBuffer">
+                            <span class="buffer-label">Buffer:</span>
+                            <span class="buffer-content" id="glossBufferContent">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emotion -->
+                <div class="result-card card-emotion">
+                    <div class="card-header">
+                        <span class="card-icon">😊</span>
+                        <h3>Facial Emotion</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="emotion-display">
+                            <span class="emotion-emoji" id="emotionEmoji">😐</span>
+                            <div class="emotion-info">
+                                <span class="emotion-label" id="emotionLabel">Neutral</span>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" id="confidenceFill"></div>
+                                </div>
+                                <span class="confidence-text" id="confidenceText">0%</span>
+                            </div>
+                        </div>
+                        <div class="emotion-chart" id="emotionChart"></div>
+                    </div>
+                </div>
+
+                <!-- Sentence Output -->
+                <div class="result-card card-sentence">
+                    <div class="card-header">
+                        <span class="card-icon">💬</span>
+                        <h3>Formed Sentence</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="sentence-display" id="sentenceDisplay">
+                            <p class="sentence-placeholder">Sentences will appear here as you sign...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sentence History -->
+                <div class="result-card card-history">
+                    <div class="card-header">
+                        <span class="card-icon">📜</span>
+                        <h3>History</h3>
+                        <button class="btn btn-sm btn-ghost" id="clearHistoryBtn">Clear</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="history-list" id="historyList">
+                            <p class="history-empty">No sentences yet</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>ISL SignVision — Powered by MediaPipe + Transformer + CNN</p>
+            <p class="footer-hint">Press <kbd>R</kbd> to reset • <kbd>Space</kbd> to toggle detection</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
